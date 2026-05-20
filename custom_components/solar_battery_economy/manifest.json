@@ -1,0 +1,13 @@
+{
+  "domain": "solar_battery_economy",
+  "name": "Sol- och batteriekonomi",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/Casca80/solar_battery_economy",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/Casca80/solar_battery_economy/issues",
+  "requirements": [],
+  "version": "0.3.21",
+  "author": "Jimmy med ChatGPT"
+}

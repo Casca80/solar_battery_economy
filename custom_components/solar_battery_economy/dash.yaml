@@ -1,0 +1,53 @@
+type: entities
+entities:
+  - entity: sensor.sol_och_batteriekonomi_datakvalitet
+    name: Datakvalitet
+  - entity: sensor.sol_och_batteriekonomi_aktuell_ersattning_sald_el
+    name: Sälja
+  - entity: sensor.sol_och_batteriekonomi_aktuellt_koppris_totalt
+    name: Köpa
+  - entity: sensor.sol_och_batteriekonomi_aktuell_overforingsavgift
+    name: Överföringsavgift
+  - entity: sensor.sol_och_batteriekonomi_aktuell_natnytta
+    name: Nätnytta aktuell
+  - entity: sensor.sol_och_batteriekonomi_verkningsgrad_batteri
+    name: Verkningsgrad batteri
+  - entity: sensor.sol_och_batteriekonomi_importkostnad_idag
+    name: Importkostnad idag
+  - entity: sensor.sol_och_batteriekonomi_importkostnad_denna_manad
+    name: Importkostnad denna månad
+  - entity: sensor.sol_och_batteriekonomi_importkostnad_total
+    name: Importkostnad totalt
+  - entity: sensor.sol_och_batteriekonomi_exportintakt_idag
+    name: Exportintäkt idag
+  - entity: sensor.sol_och_batteriekonomi_exportintakt_denna_manad
+    name: Exportintäkt denna månad
+  - entity: sensor.sol_och_batteriekonomi_exportintakt_total
+    name: Exportintäkt totalt
+  - entity: sensor.sol_och_batteriekonomi_natnytta_idag
+    name: Nätnytta idag
+  - entity: sensor.sol_och_batteriekonomi_natnytta_denna_manad
+    name: Nätnytta denna månad
+  - entity: sensor.sol_och_batteriekonomi_natnytta_total
+    name: Nätnytta totalt
+  - entity: sensor.sol_och_batteriekonomi_varde_egenforbrukad_solel_idag
+    name: Värde egenförbrukning idag
+  - entity: sensor.sol_och_batteriekonomi_varde_egenforbrukad_solel_denna_manad
+    name: Värde egenförbrukning denna månad
+  - entity: sensor.sol_och_batteriekonomi_varde_egenforbrukad_solel_total
+    name: Värde egenförbrukning totalt
+  - entity: sensor.sol_och_batteriekonomi_ekonomisk_nytta_idag
+    name: Ekonomisk uppsida idag
+  - entity: sensor.sol_och_batteriekonomi_ekonomisk_nytta_denna_manad
+    name: Ekonomisk uppsida denna månad
+  - entity: sensor.sol_och_batteriekonomi_ekonomisk_nytta_total
+    name: Ekonomisk uppsida totalt
+  - entity: sensor.sol_och_batteriekonomi_roi_procent
+    name: ROI %
+  - entity: sensor.sol_och_batteriekonomi_kvarvarande_investering
+    name: Kvarvarande investering
+  - entity: button.sol_och_batteriekonomi_kor_engangsavrakning
+    name: Kör engångsavräkning
+
+  - entity: sensor.sol_och_batteriekonomi_engangsavrakning
+    name: Engångsavräkning

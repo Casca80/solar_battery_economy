@@ -1,0 +1,467 @@
+﻿v0.3.23
+
+Ändrat:
+- Exportmoms kopplas in i beräkningarna.
+- Moms på export/såld el påverkar:
+  - aktuell ersättning såld el
+  - exportintäkt
+  - aktuell nätnytta
+  - nätnytta
+- Standardvärde är fortsatt 0 %.
+- manifest.json uppdaterad med GitHub-dokumentation och issue-länk enligt begäran.
+- Observera: manifestets versionfält är satt till 0.3.21 enligt uttrycklig begäran.
+
+------------------------------
+
+v0.3.22
+
+Ändrat:
+- Befintligt momsfält i config flow förtydligas till import/köpt el.
+- Ny konfigurationspost:
+  Moms på export/såld el (%)
+- Standardvärde för exportmoms är 0 %.
+- Beräkningarna är inte ändrade i denna version.
+
+
+
+------------------------------
+
+
+
+v0.3.21
+
+Fix:
+- Reset-service för engångsavräkning förenklad och gjord mer defensiv.
+- Service kastar inte längre vol.Invalid vid fel confirm, utan loggar och avbryter.
+- Runtime-reset är nu synkron och kallas utan await.
+- Detta bör rätta 'Unknown error' vid körning av solar_battery_economy.reset_initial_settlement.
+
+
+
+------------------------------
+
+
+
+v0.3.20
+
+Ändrat:
+- Engångsavräkning sparas även i config entry options.
+- Låsningen är därmed inte enbart beroende av RestoreEntity.
+- Ny status-sensor:
+  sensor.sol_och_batteriekonomi_engangsavrakning
+- Ny service:
+  solar_battery_economy.reset_initial_settlement
+- Reset kräver confirm: "RESET".
+- Reset drar bort tidigare avräkningsvärde från totalsensorn för egenförbrukad solel och räknar om ekonomisk nytta.
+- services.yaml tillagd.
+
+
+
+------------------------------
+
+
+
+v0.3.19
+
+Ändrat:
+- Värde egenförbrukad solel räknas inte längre på hela solproduktionen.
+- Ny modell:
+  egenförbrukning_delta_kWh = max(0, produktion_delta_kWh - export_delta_kWh)
+- Värde egenförbrukad solel:
+  egenförbrukning_delta_kWh * aktuellt köppris totalt
+- Minskar risken för dubbelräkning av exporterad solel.
+- Datakvalitetssensorn visar pending_solar_production_delta_kwh som attribut.
+
+
+
+------------------------------
+
+
+
+v0.3.18
+
+Ändrat:
+- Nätnytta inkluderas nu i ekonomisk nytta.
+- Eftersom ROI och kvarvarande investering bygger på ekonomisk nytta total, ingår nätnytta även där när investeringskostnad > 0.
+- Formel för ekonomisk nytta:
+  exportintäkt + nätnytta + värde egenförbrukad solel.
+- Importkostnad redovisas fortsatt separat.
+- Batteriverkningsgrad påverkar fortsatt inte ekonomisk nytta eller ROI.
+
+
+
+------------------------------
+
+
+
+v0.3.17
+
+Ändrat:
+- Nätnyttesensorer aktiverade igen:
+  - Aktuell nätnytta
+  - Nätnytta idag
+  - Nätnytta denna månad
+  - Nätnytta total
+- Nätnytta fortsätter räknas på exportdelta.
+- Nätnytta påverkar fortfarande inte ekonomisk nytta eller ROI i denna version.
+- dash.yaml kompletterad med nätnyttesensorerna.
+
+
+
+------------------------------
+
+
+
+v0.3.16
+
+Kontrollerat nästa steg:
+- Bygger från v0.3.15 som kunde rekonfigureras.
+- Nätnyttans runtime-beräkning kopplas in internt på exportdelta.
+- Formel:
+  nätnytta SEK/kWh = (fast öre/kWh + procent av spotpris i öre/kWh) / 100.
+- Vid exportökning ackumuleras internt:
+  export_delta_kWh * aktuell nätnytta SEK/kWh.
+- Inga nya nätnyttesensorer skapas i denna version.
+- Nätnytta påverkar ännu inte ekonomisk nytta eller ROI i denna version.
+
+
+
+------------------------------
+
+
+
+v0.3.15
+
+Fix:
+- Lägger till saknad konstant CONF_GRID_BENEFIT_SPOT_PERCENT i const.py.
+- Lägger till saknad DEFAULT_GRID_BENEFIT_SPOT_PERCENT i const.py.
+- Rättar importfelet i config_flow.py från v0.3.14.
+
+
+
+------------------------------
+
+
+
+v0.3.14
+
+Testrelease:
+- Bygger från stabila v0.3.13.
+- Lägger endast till två nya numeriska config flow-fält:
+  - Nätnytta fast del (öre/kWh)
+  - Nätnytta procent av spotpris
+- Ingen runtime-beräkning för nätnytta aktiveras.
+- Inga nya nätnyttesensorer skapas.
+- Syftet är att testa initial konfiguration och rekonfigurering med de två nya fälten.
+
+
+
+------------------------------
+
+
+
+v0.3.13
+
+Stabil fix:
+- Bygger åter från senast bekräftat fungerande v0.3.11.
+- Nätnyttefält tas bort från config flow igen eftersom v0.3.12 återinförde 400-felet.
+- config_flow.py är åter i fungerande 0.3.11-struktur.
+- Nätnytta ska inte återinföras i huvudflödet förrän den testats isolerat i separat minimal testversion.
+
+
+
+------------------------------
+
+
+
+v0.3.11
+
+Stabiliseringsrelease:
+- config_flow.py återställd till senast kända fungerande struktur från v0.3.3.
+- Experimentella nätnyttefält är tillfälligt borttagna från konfigurationsformuläret.
+- Nätnytte-konstanter och runtime-stöd får ligga kvar, men utan nya formulärfält tills config flow är verifierad stabil.
+- Rensar experimentella selector-översättningar.
+- Sanerar eventuella gamla nätnytte-options från 0.3.8-0.3.10.
+- Målet är att initial konfiguration och rekonfigurering ska fungera igen.
+
+
+
+------------------------------
+
+
+
+v0.3.10
+
+Fix:
+- _number() i config_flow.py hanterar nu tom unit_of_measurement korrekt.
+- Tom sträng ("") skickas inte längre vidare till NumberSelectorConfig.
+- Tom eller saknad enhet blir None.
+- Detta åtgärdar sannolikt 400 Bad Request vid initial konfiguration/rekonfigurering.
+
+
+
+------------------------------
+
+
+
+v0.3.9
+
+Fix:
+- Lazy import av EconomyRuntime i __init__.py så config flow inte är beroende av sensor.py vid formulärladdning.
+- PERCENTAGE importeras inte längre från Home Assistant, utan definieras lokalt som "%".
+- SelectSelector-optioner görs mer konservativa med enkla stränglistor i stället för value/label-dictar.
+- Nätnyttans multiplikatorfält använder tom enhet i selector för att undvika schema-/frontendproblem.
+- Kvarvarande investering har fortsatt state_class None.
+
+
+
+------------------------------
+
+
+
+v0.3.8
+
+Fix:
+- Kvarvarande investering använder inte längre state_class measurement ihop med monetary.
+- Kvarvarande investering använder state_class None.
+- Använd nätnytta i options flow är ändrad från boolean-selector till Ja/Nej-select.
+- Options flow sanerar numeriska defaultvärden mer defensivt för att minska risken för 400 Bad Request.
+
+
+
+------------------------------
+
+
+
+v0.3.7
+
+Ändrat:
+- Batteriförlustkostnad borttagen helt.
+- Ekonomisk nytta drar inte längre av batteriförlust.
+- ROI påverkas inte längre av batteriförlust.
+- Batteriets verkningsgrad räknas direkt från batteriurladdning / batteriladdning * 100.
+- Sensorn heter Verkningsgrad batteri.
+- Datakvalitetssensor tillagd.
+- ROI och Kvarvarande investering skapas bara om investeringskostnad > 0.
+- __pycache__ och *.pyc exkluderas från paketet.
+
+
+
+------------------------------
+
+
+
+v0.3.6
+
+Ändrat:
+- Separata revisionsfiler har slagits ihop till en enda REVISIONER.txt.
+- Senaste revisionen ligger överst.
+- Äldre REVISIONER_v*.txt tas bort ur paketet.
+
+
+
+v0.3.5
+
+Fix:
+- Mappen icons borttagen.
+- Endast icon.png och icon@2x.png används.
+
+
+
+------------------------------
+
+
+
+v0.3.4
+
+Nätnytta tillagd som delta-baserad intäkt på exportmätaren.
+
+
+
+------------------------------
+
+
+
+v0.3.3
+
+Fix:
+- Tidigare SVG-ikon borttagen.
+- Endast Home Assistant-standard:
+  icon.png
+  icon@2x.png
+
+
+
+------------------------------
+
+
+
+v0.3.2
+
+Tillagt:
+- icon.png (256x256)
+- icon@2x.png (512x512)
+- Anpassade integrationsikoner för Home Assistant.
+
+
+
+------------------------------
+
+
+
+v0.3.1
+
+Fix:
+- Rättar MRO-krock i button.py.
+- Ändrat arv från InitialSettlementButton(RestoreEntity, ButtonEntity)
+  till InitialSettlementButton(ButtonEntity, RestoreEntity).
+- Engångsavräkning och låsning kvar.
+
+
+
+------------------------------
+
+
+
+v0.3.0
+
+Ny funktion:
+- button-plattform tillagd.
+- Engångsavräkningsknapp tillagd.
+- Knappen låses efter första lyckade körning.
+- Låsning och avräkningsresultat återställs via RestoreEntity-attribut.
+- Avräkning:
+  producerad solenergi - exporterad energi = historisk egenförbrukad solel.
+- Värde:
+  historisk egenförbrukad solel * (överföringsavgift + energiskatt) * moms.
+- Värdet adderas endast till total för egenförbrukad solel och ekonomisk nytta.
+
+
+
+------------------------------
+
+
+
+v0.2.7
+
+Fix:
+- Rättar 500-felet vid rekonfigurering.
+- SolarBatteryEconomyOptionsFlow skriver inte längre till read-only property self.config_entry.
+- Använder self._config_entry internt.
+
+
+
+------------------------------
+
+
+
+v0.2.6
+
+Fix:
+- EconomyRuntime flyttad till __init__.py och sparas i hass.data.
+- sensor.py använder runtime från hass.data.
+- disconnect() tillagd och registrerad på entry.async_on_unload.
+- async_unload_entry och update listener disconnectar runtime före reload/unload.
+- config_flow defaults omskrivna för att undvika dubbel SEK/öre-konvertering.
+- Options fortsätter override:a data via {**data, **options}.
+
+
+
+------------------------------
+
+
+
+v0.2.5
+
+Fix:
+- Dokumenterad net_result som systemnytta, inte faktisk nettokostnad.
+- Robustare restore_value med explicit battery_efficiency-branch.
+- Stora deltan loggas/accepteras istället för att tyst släppas.
+- Okända enheter returnerar None.
+- Mindre extra_state_attributes-bloat.
+- PriceCalculator införd.
+- Wildcard imports borttagna i sensor.py/config_flow.py.
+- MANUFACTURER/MODEL flyttade till const.py.
+
+
+
+------------------------------
+
+
+
+v0.2.4
+
+Fix:
+- Batteriverkningsgrad räknas med deltan från sparade baslinjer:
+  (urladdning_nu - urladdning_baslinje) / (laddning_nu - laddning_baslinje)
+- Baslinjer återställs via attribut från RestoreEntity.
+- Batteriförlustkostnad finns bara som total.
+- dash.yaml uppdaterad.
+
+
+
+------------------------------
+
+
+
+v0.2.3
+
+Fix:
+- Options flow/reconfigure-schemat kraschar inte längre på None-defaults för entity selectors.
+- Stale battery_roundtrip_efficiency tas bort.
+- Öre/kWh-logiken från 0.2.2 bibehålls.
+
+
+
+------------------------------
+
+
+
+v0.2.2
+
+Kritisk ändring:
+- GUI-fält med öre/kWh konverteras alltid exakt en gång till SEK/kWh.
+- Ingen heuristik används längre vid ny inmatning.
+- Äldre felaktigt sparade värden över 2 SEK/kWh i påslag/överföring/energiskatt repareras automatiskt genom division med 100.
+- Manuellt fält för batteriverkningsgrad borttaget.
+- Ny sensor för beräknad batteriverkningsgrad.
+- README.md omskriven med CRLF och UTF-8 BOM för bättre Notepad-kompatibilitet.
+
+
+
+------------------------------
+
+
+
+v0.2.1
+
+Kritisk ändring:
+- Totalvärden återställs nu med Home Assistants RestoreEntity.
+- *_total nollas inte vid omstart, reload eller uppdatering.
+- *_today återställs bara om senaste state gäller samma datum.
+- *_month återställs bara om senaste state gäller samma kalendermånad.
+- total / idag / denna månad finns för importkostnad, exportintäkt, egenförbrukningsvärde, batteriförlust och ekonomisk nytta.
+
+Övrigt:
+- DEFAULT_ENERGY_TAX = 0.36 kr/kWh.
+- DEFAULT_NAME = solekonomi.
+- Manufacturer = Jimmy med ChatGPT.
+- dash.yaml uppdaterad.
+
+
+
+------------------------------
+
+
+
+v0.2.0
+
+- Förvalt namn: solekonomi
+- Energiskatt standard: 0.36 kr/kWh
+- Såld el använder öre/kWh i GUI
+- Skattereduktion borttagen
+- Batteriverkningsgrad förberedd för automatisk beräkning
+- Sensorer för idag / denna månad / total
+- ROI %
+- Prognosticerad återbetalningstid
+- dash.yaml inkluderad

@@ -1,0 +1,69 @@
+{
+  "title": "Sol- och batteriekonomi",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sol- och batteriekonomi",
+        "description": "Alla avtalsfält med enheten öre/kWh ska anges i öre/kWh exklusive moms. Exempel: skriv 5 för 5 öre/kWh. Sensorns resultat visas i SEK/kWh.",
+        "data": {
+          "name": "Namn",
+          "import_energy_entity": "Mätare för inköpt el",
+          "export_energy_entity": "Mätare för såld el",
+          "home_consumption_energy_entity": "Mätare för egenkonsumerad el",
+          "solar_production_energy_entity": "Mätare för solproduktion",
+          "battery_charge_energy_entity": "Mätare för batteriladdning",
+          "battery_discharge_energy_entity": "Mätare för batteriurladdning",
+          "spot_price_entity": "Spotprissensor",
+          "buy_price_mode": "Ange först hur man köper sin el",
+          "buy_price_adjustment": "Påslag/avdrag/fast pris för köpt el (öre/kWh, exkl. moms)",
+          "sell_price_mode": "Hur får du betalt för såld el?",
+          "sell_price_adjustment": "Påslag/avdrag/fast pris för såld el (öre/kWh, exkl. moms)",
+          "grid_import_mode": "Hur beräknas överföringsavgiften?",
+          "grid_import_fixed": "Fast del av överföringsavgift (öre/kWh, exkl. moms)",
+          "grid_import_percent_of_spot": "Rörlig del av överföringsavgift (% av spotpris)",
+          "energy_tax": "Energiskatt (öre/kWh, exkl. moms)",
+          "vat_percent": "Moms på import/köpt el (%)",
+          "investment_cost": "Investeringskostnad (SEK, 0 = dölj ROI-resultat)",
+          "grid_benefit_fixed_ore": "Nätnytta fast del (öre/kWh)",
+          "grid_benefit_spot_percent": "Nätnytta procent av spotpris",
+          "export_vat_percent": "Moms på export/såld el (%)"
+        }
+      }
+    },
+    "abort": {},
+    "error": {}
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Konfigurera Sol- och batteriekonomi",
+        "description": "Alla avtalsfält med enheten öre/kWh ska anges i öre/kWh exklusive moms. Exempel: skriv 5 för 5 öre/kWh. Sensorns resultat visas i SEK/kWh.",
+        "data": {
+          "name": "Namn",
+          "import_energy_entity": "Mätare för inköpt el",
+          "export_energy_entity": "Mätare för såld el",
+          "home_consumption_energy_entity": "Mätare för egenkonsumerad el",
+          "solar_production_energy_entity": "Mätare för solproduktion",
+          "battery_charge_energy_entity": "Mätare för batteriladdning",
+          "battery_discharge_energy_entity": "Mätare för batteriurladdning",
+          "spot_price_entity": "Spotprissensor",
+          "buy_price_mode": "Ange först hur man köper sin el",
+          "buy_price_adjustment": "Påslag/avdrag/fast pris för köpt el (öre/kWh, exkl. moms)",
+          "sell_price_mode": "Hur får du betalt för såld el?",
+          "sell_price_adjustment": "Påslag/avdrag/fast pris för såld el (öre/kWh, exkl. moms)",
+          "grid_import_mode": "Hur beräknas överföringsavgiften?",
+          "grid_import_fixed": "Fast del av överföringsavgift (öre/kWh, exkl. moms)",
+          "grid_import_percent_of_spot": "Rörlig del av överföringsavgift (% av spotpris)",
+          "energy_tax": "Energiskatt (öre/kWh, exkl. moms)",
+          "vat_percent": "Moms på import/köpt el (%)",
+          "investment_cost": "Investeringskostnad (SEK, 0 = dölj ROI-resultat)",
+          "grid_benefit_fixed_ore": "Nätnytta fast del (öre/kWh)",
+          "grid_benefit_spot_percent": "Nätnytta procent av spotpris",
+          "export_vat_percent": "Moms på export/såld el (%)"
+        }
+      }
+    },
+    "abort": {},
+    "error": {}
+  }
+}

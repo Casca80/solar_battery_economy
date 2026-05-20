@@ -1,0 +1,19 @@
+reset_initial_settlement:
+  name: Nollställ engångsavräkning
+  description: >
+    Nollställer engångsavräkningens låsning och drar bort tidigare avräkningsvärde
+    från totalsensorerna. Kräver confirm: "RESET".
+  fields:
+    confirm:
+      name: Bekräftelse
+      description: Måste vara exakt RESET.
+      required: true
+      example: "RESET"
+      selector:
+        text:
+    entry_id:
+      name: Config entry ID
+      description: Valfri. Om utelämnad körs reset på alla aktiva instanser.
+      required: false
+      selector:
+        text:
