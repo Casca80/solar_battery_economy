@@ -42,11 +42,13 @@ class InitialSettlementButton(ButtonEntity, RestoreEntity):
         }
 
     async def async_added_to_hass(self) -> None:
-        """Restore one-time settlement lock state."""
+        """Do not restore lock state from old button attributes.
+
+        From v0.3.20 onward, config entry options are the primary storage for
+        initial settlement state. Restoring old button state can otherwise lock
+        or unlock the button incorrectly.
+        """
         await super().async_added_to_hass()
-        last_state = await self.async_get_last_state()
-        if last_state is not None:
-            self.runtime.restore_value("initial_settlement_status", 0.0, dict(last_state.attributes))
 
     @property
     def available(self) -> bool:
@@ -71,7 +73,7 @@ class InitialSettlementButton(ButtonEntity, RestoreEntity):
             "initial_settlement_done": self.runtime.initial_settlement_done,
             "locked_after_first_successful_run": True,
             "calculation": "producerad_solenergi - exporterad_energi = historisk_egenforbrukad_solel",
-            "value_formula": "historisk_egenforbrukad_solel * (overforingsavgift + energiskatt) * moms",
+            "value_formula": "historisk_egenforbrukad_solel * (fast_overforingsavgift + energiskatt) * moms",
         }
 
         if self.runtime.initial_settlement_time:

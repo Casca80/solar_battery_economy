@@ -1,0 +1,69 @@
+{
+  "title": "Solar and battery economy",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Solar and battery economy",
+        "description": "All price fields should be entered in öre/kWh excluding VAT. Example: enter 5 for 5 öre/kWh. Sensor results are displayed in SEK/kWh.",
+        "data": {
+          "name": "Name",
+          "import_energy_entity": "Import energy sensor",
+          "export_energy_entity": "Export energy sensor",
+          "home_consumption_energy_entity": "Home consumption energy sensor (optional)",
+          "solar_production_energy_entity": "Solar production energy sensor",
+          "battery_charge_energy_entity": "Battery charge energy sensor",
+          "battery_discharge_energy_entity": "Battery discharge energy sensor",
+          "spot_price_entity": "Spot price sensor",
+          "buy_price_mode": "First, specify how you purchase your electricity",
+          "buy_price_adjustment": "Markup/Discount/Flat rate for purchased electricity (öre/kWh, excluding VAT)",
+          "sell_price_mode": "How is the selling price calculated?",
+          "sell_price_adjustment": "Markup/Discount/Flat rate for sold electricity (öre/kWh, excluding VAT)",
+          "grid_import_mode": "How is the grid import fee calculated?",
+          "grid_import_fixed": "Fixed part of the grid import fee (öre/kWh, excluding VAT)",
+          "grid_import_percent_of_spot": "Variable part of the grid import fee (% of spot price)",
+          "energy_tax": "Energy tax (öre/kWh, excluding VAT)",
+          "vat_percent": "VAT on import/purchased electricity (%)",
+          "export_vat_percent": "VAT on export/sold electricity (%)",
+          "investment_cost": "Investment cost (SEK, 0 = hide ROI results)",
+          "grid_benefit_fixed_ore": "Grid benefit fixed part (öre/kWh)",
+          "grid_benefit_spot_percent": "Grid benefit percentage of spot price"
+        }
+      }
+    },
+    "abort": {},
+    "error": {}
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Solar and Battery Economy",
+        "description": "All price fields should be entered in öre/kWh excluding VAT. Example: enter 5 for 5 öre/kWh. Sensor results are displayed in SEK/kWh.",
+        "data": {
+          "name": "Name",
+          "import_energy_entity": "Import energy sensor",
+          "export_energy_entity": "Export energy sensor",
+          "home_consumption_energy_entity": "Home consumption energy sensor (optional)",
+          "solar_production_energy_entity": "Solar production energy sensor",
+          "battery_charge_energy_entity": "Battery charge energy sensor",
+          "battery_discharge_energy_entity": "Battery discharge energy sensor",
+          "spot_price_entity": "Spot price sensor",
+          "buy_price_mode": "First, specify how you purchase your electricity",
+          "buy_price_adjustment": "Markup/Discount/Flat rate for purchased electricity (öre/kWh, excluding VAT)",
+          "sell_price_mode": "How is the selling price calculated?",
+          "sell_price_adjustment": "Markup/Discount/Flat rate for sold electricity (öre/kWh, excluding VAT)",
+          "grid_import_mode": "How is the grid import fee calculated?",
+          "grid_import_fixed": "Fixed part of the grid import fee (öre/kWh, excluding VAT)",
+          "grid_import_percent_of_spot": "Variable part of the grid import fee (% of spot price)",
+          "energy_tax": "Energy tax (öre/kWh, excluding VAT)",
+          "vat_percent": "VAT on import/purchased electricity (%)",
+          "export_vat_percent": "VAT on export/sold electricity (%)",
+          "investment_cost": "Investment cost (SEK, 0 = hide ROI results)",
+          "grid_benefit_fixed_ore": "Grid benefit fixed part (öre/kWh)",
+          "grid_benefit_spot_percent": "Grid benefit percentage of spot price"
+        }
+      }
+    },
+    "abort": {},
+    "error": {}
+  }
+}

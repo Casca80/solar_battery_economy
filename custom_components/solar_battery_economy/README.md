@@ -1,5 +1,69 @@
 ﻿# Sol- och batteriekonomi
 
+Version: 0.3.28
+
+## Reviderad engångsavräkning och egenförbrukning
+
+- Engångsavräkningen använder nu historisk egenförbrukad solel värderad med fast överföringsavgift + energiskatt + moms.
+- Rörlig överföringsavgift/spotdel används inte i engångsavräkningen.
+- Mätare för egenkonsumerad el är valfri.
+- Om mätare för egenkonsumerad el är vald används den för löpande värde av egenförbrukad solel.
+- Om den saknas används tidigare fallback med solproduktion minus export.
+
+# Sol- och batteriekonomi
+
+Version: 0.3.29
+
+## Fix för batteriverkningsgrad
+
+- Batteriverkningsgrad använder energimätare för laddning/urladdning.
+- Om vald batterisensor saknar energienhet försöker integrationen använda `sensor.rembattery_charge` och `sensor.rembattery_discharge`.
+- Valfria batterisensorer med fel enhet ska inte längre ge datakvalitetsvarning.
+- Sensorns attribut visar vilken batterikälla som faktiskt användes.
+
+# Sol- och batteriekonomi
+
+Version: 0.3.27
+
+## Fix för datakvalitet och batteriverkningsgrad
+
+- Datakvalitet visar nu tydligare `status_reason`.
+- `pending_solar_production_delta_kwh` är endast diagnostik.
+- Batteriverkningsgrad visar direkt beräknat värde även om det blir över 100 %, eftersom batterimätare kan ha olika historisk baslinje.
+- Batteriverkningsgrad har nu diagnostikattribut för laddad/urladdad energi.
+
+# Sol- och batteriekonomi
+
+Version: 0.3.26
+
+## Svenska översättningar uppdaterade
+
+`translations/sv.json` har uppdaterats med reviderade texter för config flow och options flow.
+
+# Sol- och batteriekonomi
+
+Version: 0.3.25
+
+## English translation added
+
+`translations/en.json` has been added for config flow and options flow.
+
+# Sol- och batteriekonomi
+
+Version: 0.3.24
+
+## Fix för engångsavräkning
+
+Engångsavräkning använder nu config entry options som primär statuskälla.
+
+Fixar:
+- gammal RestoreEntity-status från knappen kan inte längre låsa eller låsa upp avräkningen felaktigt
+- misslyckad avräkning visas i status-sensorns attribut
+- historisk egenförbrukning skyddas med max(0, producerat - exporterad)
+- status-sensorn visar last_result och last_error
+
+# Sol- och batteriekonomi
+
 Version: 0.3.23
 
 ## Exportmoms inkopplad i beräkningar

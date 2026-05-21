@@ -180,7 +180,7 @@ def _schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
 
     _add_required_entity(schema, CONF_IMPORT_ENERGY, d)
     _add_required_entity(schema, CONF_EXPORT_ENERGY, d)
-    _add_required_entity(schema, CONF_HOME_CONSUMPTION_ENERGY, d)
+    _add_optional_entity(schema, CONF_HOME_CONSUMPTION_ENERGY, d)
     _add_required_entity(schema, CONF_SOLAR_PRODUCTION_ENERGY, d)
     _add_optional_entity(schema, CONF_BATTERY_CHARGE_ENERGY, d)
     _add_optional_entity(schema, CONF_BATTERY_DISCHARGE_ENERGY, d)

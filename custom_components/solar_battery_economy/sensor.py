@@ -125,6 +125,32 @@ def _normalised_energy_state(hass: HomeAssistant, entity_id: str | None) -> floa
     return _energy_to_kwh(raw, unit)
 
 
+def _candidate_entity_ids(configured: str | None, fallbacks: tuple[str, ...]) -> list[str]:
+    """Return configured entity first, then useful fallback entity ids."""
+    candidates: list[str] = []
+    for entity_id in (configured, *fallbacks):
+        if entity_id and entity_id not in candidates:
+            candidates.append(entity_id)
+    return candidates
+
+
+def _normalised_battery_energy_state(
+    hass: HomeAssistant,
+    configured_entity_id: str | None,
+    fallbacks: tuple[str, ...],
+) -> tuple[float | None, str | None, str | None]:
+    """Read a battery energy meter, with fallback for common power-vs-energy mixups."""
+    first_unit: str | None = None
+    for entity_id in _candidate_entity_ids(configured_entity_id, fallbacks):
+        raw, unit = _state_and_unit(hass, entity_id)
+        if first_unit is None and unit is not None:
+            first_unit = unit
+        value = _energy_to_kwh(raw, unit)
+        if value is not None:
+            return value, entity_id, unit
+    return None, None, first_unit
+
+
 def _normalised_price_state(hass: HomeAssistant, entity_id: str | None) -> float | None:
     raw, unit = _state_and_unit(hass, entity_id)
     return _price_to_sek_per_kwh(raw, unit)
@@ -238,6 +264,8 @@ class EconomyRuntime:
         self.initial_settlement_time: str | None = cfg.get(CONF_INITIAL_SETTLEMENT_TIME)
         self.initial_settlement_kwh: float | None = self._optional_float(cfg.get(CONF_INITIAL_SETTLEMENT_KWH))
         self.initial_settlement_value: float | None = self._optional_float(cfg.get(CONF_INITIAL_SETTLEMENT_VALUE))
+        self.initial_settlement_last_result: str | None = None
+        self.initial_settlement_last_error: str | None = None
 
         self._unsub = None
 
@@ -265,7 +293,9 @@ class EconomyRuntime:
 
     def restore_value(self, key: str, value: float, attrs: dict[str, Any]) -> None:
         if key == "initial_settlement_status":
-            self.restore_initial_settlement(attrs)
+            # Config entry options are the primary source from v0.3.20 onward.
+            # RestoreEntity attributes must not lock an entry after the saved
+            # options have been reset.
             return
 
         if key.endswith("_today"):
@@ -283,8 +313,12 @@ class EconomyRuntime:
             return
 
     def restore_initial_settlement(self, attrs: dict[str, Any]) -> None:
-        done = bool(attrs.get("initial_settlement_done", False))
-        self.initial_settlement_done = done
+        raw_done = attrs.get("initial_settlement_done", False)
+        done = raw_done if isinstance(raw_done, bool) else str(raw_done).lower() in ("true", "1", "yes", "ja", "on")
+        if not done:
+            return
+
+        self.initial_settlement_done = True
         self.initial_settlement_time = attrs.get("initial_settlement_time")
         try:
             if attrs.get("initial_settlement_kwh") is not None:
@@ -295,8 +329,12 @@ class EconomyRuntime:
             _LOGGER.warning("Could not restore initial settlement attributes")
 
     def run_initial_settlement(self) -> tuple[bool, str]:
+        self.initial_settlement_last_error = None
+
         if self.initial_settlement_done:
-            return False, "Engångsavräkning är redan utförd."
+            msg = "Engångsavräkning är redan utförd."
+            self.initial_settlement_last_result = msg
+            return False, msg
 
         cfg = _cfg(self.entry)
         self._calculate_current_prices(cfg)
@@ -305,16 +343,24 @@ class EconomyRuntime:
         exported = _normalised_energy_state(self.hass, cfg.get(CONF_EXPORT_ENERGY))
 
         if produced is None or exported is None:
-            return False, "Saknar giltig solproduktions- eller exportmätare."
+            msg = "Saknar giltig solproduktions- eller exportmätare."
+            self.initial_settlement_last_error = msg
+            self.initial_settlement_last_result = msg
+            self._schedule_entities()
+            return False, msg
 
-        historical_self_consumed_kwh = produced - exported
+        historical_self_consumed_kwh = max(0.0, produced - exported)
         if historical_self_consumed_kwh <= 0:
-            return False, "Beräknad historisk egenförbrukning är 0 kWh eller negativ."
+            msg = "Beräknad historisk egenförbrukning är 0 kWh eller negativ."
+            self.initial_settlement_last_error = msg
+            self.initial_settlement_last_result = msg
+            self._schedule_entities()
+            return False, msg
 
-        grid = self.current_prices.get("grid_import", 0.0)
-        tax = self.current_prices.get("energy_tax", 0.0)
-        vat = self.current_prices.get("vat_factor", 0.0)
-        settlement_value = historical_self_consumed_kwh * (grid + tax) * (1.0 + vat)
+        fixed_grid_import = float(cfg.get(CONF_GRID_IMPORT_FIXED, DEFAULT_GRID_IMPORT_FIXED) or 0.0)
+        tax = float(cfg.get(CONF_ENERGY_TAX, DEFAULT_ENERGY_TAX) or 0.0)
+        vat = float(cfg.get(CONF_VAT_PERCENT, DEFAULT_VAT_PERCENT) or 0.0) / 100.0
+        settlement_value = historical_self_consumed_kwh * (fixed_grid_import + tax) * (1.0 + vat)
 
         self.values["self_consumed_value_total"] += settlement_value
         self._recalculate_net_result()
@@ -324,8 +370,10 @@ class EconomyRuntime:
         self.initial_settlement_time = datetime.now().isoformat(timespec="seconds")
         self.initial_settlement_kwh = historical_self_consumed_kwh
         self.initial_settlement_value = settlement_value
+        self.initial_settlement_last_result = "Engångsavräkning utförd."
 
         self._persist_initial_settlement()
+        self._schedule_entities()
 
         return True, "Engångsavräkning utförd."
 
@@ -350,6 +398,8 @@ class EconomyRuntime:
         self.initial_settlement_time = None
         self.initial_settlement_kwh = None
         self.initial_settlement_value = None
+        self.initial_settlement_last_result = "Engångsavräkning nollställd."
+        self.initial_settlement_last_error = None
         self._schedule_entities()
 
     async def async_start(self) -> None:
@@ -420,7 +470,10 @@ class EconomyRuntime:
         if entity_id == cfg.get(CONF_IMPORT_ENERGY):
             self._add_period_metric("import_cost", delta_kwh * buy_total)
 
-        elif entity_id == cfg.get(CONF_SOLAR_PRODUCTION_ENERGY):
+        elif entity_id == cfg.get(CONF_HOME_CONSUMPTION_ENERGY):
+            self._add_period_metric("self_consumed_value", delta_kwh * buy_total)
+
+        elif entity_id == cfg.get(CONF_SOLAR_PRODUCTION_ENERGY) and not cfg.get(CONF_HOME_CONSUMPTION_ENERGY):
             # Produktion kan komma före eller efter motsvarande exportuppdatering.
             # Vi buffrar därför producerad energi och räknar värde av egenförbrukning
             # som producerad energi minus exporterad energi.
@@ -432,7 +485,7 @@ class EconomyRuntime:
             if grid_benefit_price:
                 self._add_period_metric("grid_benefit", delta_kwh * grid_benefit_price)
 
-            if self.pending_solar_production_delta_kwh > 0:
+            if not cfg.get(CONF_HOME_CONSUMPTION_ENERGY) and self.pending_solar_production_delta_kwh > 0:
                 self_consumed_delta = max(0.0, self.pending_solar_production_delta_kwh - delta_kwh)
                 if self_consumed_delta > 0:
                     self._add_period_metric("self_consumed_value", self_consumed_delta * buy_total)
@@ -470,14 +523,29 @@ class EconomyRuntime:
 
     def battery_efficiency(self) -> float | None:
         cfg = _cfg(self.entry)
-        charge = _normalised_energy_state(self.hass, cfg.get(CONF_BATTERY_CHARGE_ENERGY))
-        discharge = _normalised_energy_state(self.hass, cfg.get(CONF_BATTERY_DISCHARGE_ENERGY))
+        charge, _, _ = _normalised_battery_energy_state(
+            self.hass,
+            cfg.get(CONF_BATTERY_CHARGE_ENERGY),
+            ("sensor.rembattery_charge", "sensor.battery_charge"),
+        )
+        discharge, _, _ = _normalised_battery_energy_state(
+            self.hass,
+            cfg.get(CONF_BATTERY_DISCHARGE_ENERGY),
+            ("sensor.rembattery_discharge", "sensor.battery_discharge"),
+        )
+
         if charge is None or discharge is None or charge <= 0:
             return None
+
         efficiency = discharge / charge
-        if efficiency <= 0 or efficiency > 1.05:
+        if efficiency <= 0:
             return None
-        return min(efficiency, 1.0)
+
+        # Direct calculation from the selected input sensors.
+        # Do not clamp or reject values above 100 %, because some integrations expose
+        # battery charge/discharge meters with different historical baselines.
+        # If the result is above 100 %, expose it and show diagnostics in attributes.
+        return efficiency
 
     def _calculate_current_prices(self, cfg: dict[str, Any]) -> None:
         self.price_calculator.recalculate(cfg)
@@ -488,9 +556,7 @@ class EconomyRuntime:
             (cfg.get(CONF_IMPORT_ENERGY), "energy", True),
             (cfg.get(CONF_EXPORT_ENERGY), "energy", True),
             (cfg.get(CONF_SOLAR_PRODUCTION_ENERGY), "energy", True),
-            (cfg.get(CONF_HOME_CONSUMPTION_ENERGY), "energy", True),
-            (cfg.get(CONF_BATTERY_CHARGE_ENERGY), "energy", False),
-            (cfg.get(CONF_BATTERY_DISCHARGE_ENERGY), "energy", False),
+            (cfg.get(CONF_HOME_CONSUMPTION_ENERGY), "energy", False),
             (cfg.get(CONF_SPOT_PRICE), "price", True),
         ]
 
@@ -520,13 +586,18 @@ class EconomyRuntime:
             cfg.get(CONF_IMPORT_ENERGY),
             cfg.get(CONF_EXPORT_ENERGY),
             cfg.get(CONF_SOLAR_PRODUCTION_ENERGY),
-            cfg.get(CONF_HOME_CONSUMPTION_ENERGY),
             cfg.get(CONF_SPOT_PRICE),
         ]
         if any(not x for x in required):
             return "Fel"
-        if self.unit_warnings or self.ignored_sensors or self.delta_warnings:
+
+        has_unit_warnings = len(self.unit_warnings) > 0
+        has_ignored_sensors = len(self.ignored_sensors) > 0
+        has_delta_warnings = len(self.delta_warnings) > 0
+
+        if has_unit_warnings or has_ignored_sensors or has_delta_warnings:
             return "Varning"
+
         return "OK"
 
     @callback
@@ -664,10 +735,19 @@ class EconomySensor(RestoreEntity, SensorEntity):
         }
 
         if self.description.key == "data_quality":
+            state = self.runtime.data_quality_state()
             attrs["unit_warnings"] = self.runtime.unit_warnings
             attrs["ignored_sensors"] = self.runtime.ignored_sensors
             attrs["delta_warnings"] = self.runtime.delta_warnings
             attrs["pending_solar_production_delta_kwh"] = round(self.runtime.pending_solar_production_delta_kwh, 4)
+
+            if state == "OK":
+                attrs["status_reason"] = "Inga aktiva varningar. Pending solar production delta är endast diagnostik."
+            elif state == "Varning":
+                attrs["status_reason"] = "Minst en aktiv unit_warning, ignored_sensor eller delta_warning finns."
+            else:
+                attrs["status_reason"] = "En obligatorisk sensor saknas i konfigurationen."
+
             return attrs
 
         if self.description.key == "initial_settlement_status":
@@ -675,6 +755,11 @@ class EconomySensor(RestoreEntity, SensorEntity):
             attrs["initial_settlement_time"] = self.runtime.initial_settlement_time
             attrs["initial_settlement_kwh"] = self.runtime.initial_settlement_kwh
             attrs["initial_settlement_value"] = self.runtime.initial_settlement_value
+            attrs["last_result"] = self.runtime.initial_settlement_last_result
+            attrs["last_error"] = self.runtime.initial_settlement_last_error
+            attrs["storage_source"] = "config_entry_options"
+            attrs["calculation"] = "producerad_solenergi - exporterad_energi = historisk_egenforbrukad_solel"
+            attrs["value_formula"] = "historisk_egenforbrukad_solel * (fast_overforingsavgift + energiskatt) * moms"
             attrs["reset_service"] = "solar_battery_economy.reset_initial_settlement"
             attrs["reset_requires"] = 'confirm: "RESET"'
             return attrs
@@ -724,8 +809,37 @@ class EconomySensor(RestoreEntity, SensorEntity):
                 attrs["initial_settlement_kwh"] = self.runtime.initial_settlement_kwh
 
         if self.description.key == "battery_efficiency":
+            cfg = _cfg(self.runtime.entry)
+            charge, charge_source, charge_unit = _normalised_battery_energy_state(
+                self.runtime.hass,
+                cfg.get(CONF_BATTERY_CHARGE_ENERGY),
+                ("sensor.rembattery_charge", "sensor.battery_charge"),
+            )
+            discharge, discharge_source, discharge_unit = _normalised_battery_energy_state(
+                self.runtime.hass,
+                cfg.get(CONF_BATTERY_DISCHARGE_ENERGY),
+                ("sensor.rembattery_discharge", "sensor.battery_discharge"),
+            )
+
             attrs["battery_efficiency_source"] = "battery_discharge_kwh / battery_charge_kwh"
             attrs["battery_efficiency_model"] = "Direkt från valda in-sensorers aktuella mätarställningar, utan baseline."
+            attrs["battery_charge_kwh"] = charge
+            attrs["battery_discharge_kwh"] = discharge
+            attrs["battery_charge_source_entity"] = charge_source
+            attrs["battery_discharge_source_entity"] = discharge_source
+            attrs["battery_charge_source_unit"] = charge_unit
+            attrs["battery_discharge_source_unit"] = discharge_unit
+
+            if not cfg.get(CONF_BATTERY_CHARGE_ENERGY) or not cfg.get(CONF_BATTERY_DISCHARGE_ENERGY):
+                attrs["battery_efficiency_status"] = "Batterimätare saknas. Sensorn är inte relevant utan batteri."
+            elif charge is None or discharge is None:
+                attrs["battery_efficiency_status"] = "Kan inte läsa en eller båda batterimätarna."
+            elif charge <= 0:
+                attrs["battery_efficiency_status"] = "Batteriladdningsmätaren är 0 eller negativ."
+            elif discharge / charge > 1.0:
+                attrs["battery_efficiency_status"] = "Över 100 %. Kontrollera om batterimätarna har olika historisk baslinje."
+            else:
+                attrs["battery_efficiency_status"] = "OK"
 
         if self.runtime.delta_warnings and self.description.key.endswith("_total"):
             attrs["delta_warnings"] = self.runtime.delta_warnings

@@ -1,4 +1,85 @@
-﻿v0.3.23
+v0.3.29
+
+Fix:
+- Batteriverkningsgrad försöker nu använda energimätarna sensor.rembattery_charge och sensor.rembattery_discharge som fallback om vald batterisensor saknar energienhet.
+- Valda batterisensorer med effekt-enhet påverkar inte längre datakvalitet, eftersom batterisensorerna är valfria diagnostiksensorer.
+- Batteriverkningsgrad visar vilken källsensor och enhet som faktiskt användes.
+
+
+
+------------------------------
+
+
+
+v0.3.28
+
+Ändrat:
+- Engångsavräkningen värderar historisk egenförbrukad solel med fast överföringsavgift + energiskatt + moms.
+- Rörlig överföringsavgift/spotdel tas inte längre med i engångsavräkningen.
+- Mätare för egenkonsumerad el är valfri i config flow.
+- Om mätare för egenkonsumerad el är vald används den för löpande värde av egenförbrukad solel.
+- Om mätaren saknas används befintlig fallback med solproduktion minus export.
+
+
+
+------------------------------
+
+
+
+v0.3.27
+
+Fix:
+- Datakvalitetssensorn får tydligare status_reason.
+- pending_solar_production_delta_kwh är endast diagnostik och ska inte ensamt ge Varning.
+- Batteriverkningsgrad räknas direkt från valda batterimätare utan att avvisa värden över 105 %.
+- Batteriverkningsgrad får diagnostikattribut:
+  - battery_charge_kwh
+  - battery_discharge_kwh
+  - battery_efficiency_status
+
+------------------------------
+
+v0.3.26
+
+Ändrat:
+- translations/sv.json uppdaterad med reviderade svenska texter.
+- Svenska texter för config flow och options flow validerade.
+
+
+
+------------------------------
+
+
+
+v0.3.25
+
+Ändrat:
+- translations/en.json tillagd.
+- Engelska texter för config flow och options flow kompletterade.
+- JSON-strukturen validerad.
+
+
+
+------------------------------
+
+
+
+v0.3.24
+
+Fix:
+- Engångsavräkning använder config entry options som primär lagring.
+- Knappen återläser inte längre gammal RestoreEntity-status.
+- Gammal button restore state kan därmed inte felaktigt låsa eller låsa upp avräkningen.
+- Status-sensorn visar last_result och last_error.
+- Beräkningen skyddas med max(0, producerad energi - exporterad energi).
+
+
+
+------------------------------
+
+
+
+v0.3.23
 
 Ändrat:
 - Exportmoms kopplas in i beräkningarna.
@@ -9,10 +90,14 @@
   - nätnytta
 - Standardvärde är fortsatt 0 %.
 - manifest.json uppdaterad med GitHub-dokumentation och issue-länk enligt begäran.
-- Observera: manifestets versionfält är satt till 0.3.21 enligt uttrycklig begäran.
-
-------------------------------
-
+- Observera: manifestets versionfält är satt till 0.3.21 enligt uttrycklig begäran.
+
+
+
+------------------------------
+
+
+
 v0.3.22
 
 Ändrat:
