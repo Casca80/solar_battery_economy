@@ -1,6 +1,6 @@
 ﻿# Sol- och batteriekonomi
 
-Version: 0.3.21 - Beta med STORA bokstäver
+Version: 0.3.3 - Beta med STORA bokstäver
 
 ## Enkel uppföljning av den ekonomiska nyttan för en solcellsinstallation med batteri.
 
