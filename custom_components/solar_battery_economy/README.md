@@ -1,110 +1,128 @@
-﻿# Sol- och batteriekonomi
-
-Version: 0.3.28
-
-## Reviderad engångsavräkning och egenförbrukning
-
-- Engångsavräkningen använder nu historisk egenförbrukad solel värderad med fast överföringsavgift + energiskatt + moms.
-- Rörlig överföringsavgift/spotdel används inte i engångsavräkningen.
-- Mätare för egenkonsumerad el är valfri.
-- Om mätare för egenkonsumerad el är vald används den för löpande värde av egenförbrukad solel.
-- Om den saknas används tidigare fallback med solproduktion minus export.
-
 # Sol- och batteriekonomi
 
-Version: 0.3.29
+Version: 0.3.30
 
-## Fix för batteriverkningsgrad
+Custom integration för Home Assistant som räknar ekonomisk nytta av solproduktion, såld el, nätnytta, egenförbrukad solel, importkostnad, investering/ROI och batteriverkningsgrad.
 
-- Batteriverkningsgrad använder energimätare för laddning/urladdning.
-- Om vald batterisensor saknar energienhet försöker integrationen använda `sensor.rembattery_charge` och `sensor.rembattery_discharge`.
-- Valfria batterisensorer med fel enhet ska inte längre ge datakvalitetsvarning.
-- Sensorns attribut visar vilken batterikälla som faktiskt användes.
+## Installation
 
-# Sol- och batteriekonomi
+Kopiera mappen:
 
-Version: 0.3.27
+```text
+custom_components/solar_battery_economy
+```
 
-## Fix för datakvalitet och batteriverkningsgrad
+till din Home Assistant-konfiguration:
 
-- Datakvalitet visar nu tydligare `status_reason`.
-- `pending_solar_production_delta_kwh` är endast diagnostik.
-- Batteriverkningsgrad visar direkt beräknat värde även om det blir över 100 %, eftersom batterimätare kan ha olika historisk baslinje.
-- Batteriverkningsgrad har nu diagnostikattribut för laddad/urladdad energi.
+```text
+config/custom_components/solar_battery_economy
+```
 
-# Sol- och batteriekonomi
+Starta därefter om Home Assistant.
 
-Version: 0.3.26
+## Konfiguration
 
-## Svenska översättningar uppdaterade
+Lägg till integrationen via:
 
-`translations/sv.json` har uppdaterats med reviderade texter för config flow och options flow.
+```text
+Inställningar -> Enheter och tjänster -> Lägg till integration -> Sol- och batteriekonomi
+```
 
-# Sol- och batteriekonomi
+Du väljer sensorer för:
 
-Version: 0.3.25
+- inköpt/importerad energi
+- såld/exporterad energi
+- solproduktion
+- spotpris
+- egenkonsumerad solel, valfri
+- batteriladdning, valfri
+- batteriurladdning, valfri
 
-## English translation added
+Alla energimätare ska vara ackumulerande energisensorer, helst med `Wh`, `kWh` eller `MWh`.
 
-`translations/en.json` has been added for config flow and options flow.
+Spotprissensorn stöder:
 
-# Sol- och batteriekonomi
+- `SEK/kWh`
+- `kr/kWh`
+- `öre/kWh`
+- `SEK/MWh`
+- `kr/MWh`
 
-Version: 0.3.24
+## Prisfält
 
-## Fix för engångsavräkning
+Fält med enheten `öre/kWh` anges i öre/kWh exklusive moms.
 
-Engångsavräkning använder nu config entry options som primär statuskälla.
+Exempel:
 
-Fixar:
-- gammal RestoreEntity-status från knappen kan inte längre låsa eller låsa upp avräkningen felaktigt
-- misslyckad avräkning visas i status-sensorns attribut
-- historisk egenförbrukning skyddas med max(0, producerat - exporterad)
-- status-sensorn visar last_result och last_error
+```text
+5
+```
 
-# Sol- och batteriekonomi
+betyder:
 
-Version: 0.3.23
+```text
+5 öre/kWh = 0,05 SEK/kWh
+```
 
-## Exportmoms inkopplad i beräkningar
+Integrationens sensorer visar resultat i `SEK/kWh` eller `SEK`.
 
-Fältet `Moms på export/såld el (%)` används nu i beräkningarna.
+## Ekonomisk nytta
 
-Påverkar:
-- aktuell ersättning för såld el
-- exportintäkt
-- aktuell nätnytta
-- nätnytta
+Ekonomisk nytta beräknas som:
 
-Standard är 0 %, vilket passar normalfallet för icke momsregistrerad privatperson.
+```text
+exportintäkt
++ nätnytta
++ värde egenförbrukad solel
+```
 
-Manifestet är uppdaterat med GitHub-länkar enligt begäran. Manifestets versionsfält är satt till 0.3.21 enligt begäran.
+Importkostnad redovisas separat och dras inte av från ekonomisk nytta.
 
-# Sol- och batteriekonomi
+## Löpande egenförbrukning
 
-Version: 0.3.22
+Om en mätare för egenkonsumerad solel är vald används den som primär källa.
 
-## Konfigurationsändring för moms
+Om den saknas används fallback:
 
-Befintligt momsfält har förtydligats till:
-- Moms på import/köpt el (%)
+```text
+egenförbrukning_delta = max(0, solproduktion_delta - export_delta)
+```
 
-Nytt fält:
-- Moms på export/såld el (%)
+Värdet beräknas med aktuellt totalt köppris:
 
-Standardvärde för exportmoms är 0 %.
+```text
+egenförbrukning_delta_kWh * aktuellt köppris totalt
+```
 
-Beräkningarna är inte ändrade i denna version.
+## Engångsavräkning
 
-# Sol- och batteriekonomi
+Engångsavräkningen är tänkt för äldre anläggningar där Home Assistant börjar mäta efter att solanläggningen redan varit i drift.
 
-Version: 0.3.21
+Den räknar fram historisk egenförbrukad solel:
 
-## Fix för reset-service
+```text
+max(0, total solproduktion - total export)
+```
 
-Reset-servicen för engångsavräkning är förenklad och mer defensiv.
+Den historiska egenförbrukningen värderas konservativt:
 
-Använd:
+```text
+historisk egenförbrukad kWh
+* (fast överföringsavgift + energiskatt)
+* moms
+```
+
+Rörlig överföringsavgift och spotpris tas inte med i engångsavräkningen.
+
+Engångsavräkningen:
+
+- kan köras med knappen `Kör engångsavräkning`
+- läggs bara på totalsensorerna
+- påverkar inte idag- eller månadssensorer
+- sparas i config entry options
+- återställs inte från gamla RestoreEntity-attribut
+
+Det finns även en reset-service:
 
 ```yaml
 action: solar_battery_economy.reset_initial_settlement
@@ -112,227 +130,103 @@ data:
   confirm: RESET
 ```
 
-Om flera instanser finns kan `entry_id` anges, annars försöker servicen resetta alla laddade instanser.
+Om flera instanser finns kan `entry_id` anges.
 
-# Sol- och batteriekonomi
+## Batteriverkningsgrad
 
-Version: 0.3.20
+Batteriverkningsgrad beräknas direkt från ackumulerade energimätare:
 
-## Säkrare engångsavräkning
+```text
+batteriurladdning_kWh / batteriladdning_kWh * 100
+```
 
-Engångsavräkning sparas nu även i config entry options, inte bara via RestoreEntity.
+Välj lifetime/total energy-sensorer, inte effekt-sensorer.
 
-Tillagt:
-- sensor.sol_och_batteriekonomi_engangsavrakning
-- service: solar_battery_economy.reset_initial_settlement
-- services.yaml
+Bra exempel:
 
-Reset kräver uttrycklig bekräftelse:
+```text
+sensor.fronius_symo_gen24_10_0_storage_charging_lifetime_energy
+sensor.fronius_symo_gen24_10_0_storage_discharging_lifetime_energy
+```
 
-confirm: "RESET"
+I en Remote HA-speglad sandbox kan motsvarande heta:
 
-Vid reset dras tidigare avräkningsvärde bort från totalsensorn för egenförbrukad solel och ekonomisk nytta räknas om.
+```text
+sensor.remfronius_symo_gen24_10_0_storage_charging_lifetime_energy
+sensor.remfronius_symo_gen24_10_0_storage_discharging_lifetime_energy
+```
 
-# Sol- och batteriekonomi
+Om vald batterisensor saknar energienhet försöker integrationen använda vanliga fallback-sensorer:
 
-Version: 0.3.19
+```text
+sensor.rembattery_charge
+sensor.rembattery_discharge
+sensor.battery_charge
+sensor.battery_discharge
+```
 
-## Korrigerad egenförbrukning
-
-Värde av egenförbrukad solel räknas inte längre på all producerad solel.
-
-Tidigare förenklade modell:
-produktion_delta_kWh * aktuellt köppris totalt
-
-Ny modell:
-egenförbrukning_delta_kWh = max(0, produktion_delta_kWh - export_delta_kWh)
-
-värde egenförbrukad solel =
-egenförbrukning_delta_kWh * aktuellt köppris totalt
-
-Detta minskar risken för dubbelräkning där exporterad solel tidigare både kunde ge exportintäkt/nätnytta och samtidigt räknas som egenförbrukad solel.
-
-# Sol- och batteriekonomi
-
-Version: 0.3.18
-
-## Nätnytta inkluderad i ekonomisk nytta
-
-Nätnytta ingår nu i ekonomisk nytta:
-
-ekonomisk nytta =
-exportintäkt + nätnytta + värde egenförbrukad solel
-
-Eftersom ROI och kvarvarande investering bygger på ekonomisk nytta total ingår nätnytta även där när investeringskostnad är större än 0.
-
-Importkostnad redovisas fortsatt separat.
-Batteriverkningsgrad påverkar fortsatt inte ekonomisk nytta eller ROI.
-
-# Sol- och batteriekonomi
-
-Version: 0.3.17
-
-## Nätnyttesensorer aktiverade
-
-Denna version aktiverar nätnyttesensorerna igen:
-
-- sensor.sol_och_batteriekonomi_aktuell_natnytta
-- sensor.sol_och_batteriekonomi_natnytta_idag
-- sensor.sol_och_batteriekonomi_natnytta_denna_manad
-- sensor.sol_och_batteriekonomi_natnytta_total
-
-Nätnytta räknas på exportdelta.
-
-I denna version påverkar nätnytta fortfarande inte ekonomisk nytta eller ROI.
-Det görs först efter verifiering av att nätnyttesensorerna räknar rätt.
-
-# Sol- och batteriekonomi
-
-Version: 0.3.16
-
-## Kontrollerat nästa steg för nätnytta
-
-Denna version behåller de fungerande configfälten från v0.3.15 och kopplar in nätnyttans runtime-beräkning internt.
-
-Inga nya sensorer skapas ännu och nätnytta påverkar ännu inte ekonomisk nytta eller ROI.
-
-Syftet är att verifiera att exportdelta kan beräkna nätnytta utan att störa config flow eller befintliga sensorer.
-
-# Sol- och batteriekonomi
-
-Version: 0.3.15
-
-## Fix
-
-Rättar importfelet:
-cannot import name 'CONF_GRID_BENEFIT_SPOT_PERCENT'
-
-v0.3.14 saknade konstanten i const.py.
-
-# Sol- och batteriekonomi
-
-Version: 0.3.14
-
-## Testrelease för nätnytta i config flow
-
-Denna version gör endast steg 1-5 i återinförandet av nätnytta.
-
-Tillagt i konfiguration och rekonfiguration:
-- Nätnytta fast del (öre/kWh)
-- Nätnytta procent av spotpris
-
-Viktigt:
-- Ingen ny nätnyttesensor skapas i denna testrelease.
-- Ingen nätnytteberäkning kopplas in i ekonomisk nytta i denna testrelease.
-- Syftet är endast att verifiera att initial konfiguration och rekonfigurering fungerar med två extra numeriska fält.
-
-# Sol- och batteriekonomi
-
-Version: 0.3.13
-
-## Stabil fix
-
-Denna version bygger från senast bekräftat fungerande v0.3.11.
-
-Nätnyttefälten i config flow är borttagna igen eftersom v0.3.12 återinförde 400 Bad Request vid konfiguration.
-
-Nätnytta ska testas isolerat innan den läggs tillbaka i huvudversionen.
-
-# Sol- och batteriekonomi
-
-Version: 0.3.11
-
-## Stabiliseringsrelease
-
-Denna version återställer config flow till den senast kända fungerande strukturen från v0.3.3.
-
-Nätnyttefält i konfigurationsformuläret är tillfälligt borttagna för att isolera 400 Bad Request-felet.
-Runtime-stöd för nätnytta finns kvar men är inte exponerat i formuläret i denna version.
-
-Syftet är att initial konfiguration och rekonfigurering ska fungera igen.
-
-# Sol- och batteriekonomi
-
-Version: 0.3.10
-
-## Fix i 0.3.10
-
-- NumberSelectorConfig får inte längre unit_of_measurement="".
-- Tom enhet görs om till None.
-- Detta är avsett att rätta 400 Bad Request i config flow.
-
-# Sol- och batteriekonomi
-
-Version: 0.3.9
-
-## Fix i 0.3.9
-
-Denna version fokuserar på att config flow ska kunna laddas igen.
-
-- sensor.py importeras inte längre indirekt när config flow laddas.
-- Select-fält är förenklade för bättre kompatibilitet.
-- PERCENTAGE definieras lokalt.
-- Kvarvarande investering har korrekt state_class.
-
-
-
-
-# Sol- och batteriekonomi
-
-Version: 0.3.8
-Author: Jimmy med ChatGPT
-
-## Fix i 0.3.8
-
-- Kvarvarande investering har korrigerad state_class.
-- Nätnytta Ja/Nej använder select i stället för BooleanSelector i options flow.
-- Config flow är mer defensiv mot tomma eller felaktiga numeric defaults.
-- Paketet exkluderar __pycache__ och *.pyc.
-
-
-
-
-# Sol- och batteriekonomi
-
-Version: 0.3.7
-Author: Jimmy med ChatGPT
-
-## Viktiga ändringar i 0.3.7
-
-- Ekonomisk batteriförlust är borttagen.
-- Batteriförlust påverkar inte längre ekonomisk nytta.
-- Batteriförlust påverkar inte längre ROI.
-- Tidigare sensor för batteriförlustkostnad tas bort.
-- Batteriets verkningsgrad räknas direkt från valda in-sensorer:
-  batteriurladdning / batteriladdning * 100.
-- Sensorn heter:
-  sensor.sol_och_batteriekonomi_verkningsgrad_batteri
-- Ny datakvalitetssensor:
-  sensor.sol_och_batteriekonomi_datakvalitet
-- ROI och kvarvarande investering skapas endast om investeringskostnad är större än 0.
-- Paketet exkluderar __pycache__ och *.pyc.
+Batterisensorer är valfria. Felaktiga eller saknade batterisensorer ska inte ge datakvalitetsvarning för hela integrationen.
 
 ## Datakvalitet
 
-Datakvalitetssensorn visar:
-- OK
-- Varning
-- Fel
+Datakvalitetssensorn kan visa:
 
-Attribut visar:
-- unit_warnings
-- ignored_sensors
-- delta_warnings
+- `OK`
+- `Varning`
+- `Fel`
 
-Okända energi- eller prisenheter ignoreras för att undvika felberäkningar.
+Attribut visar bland annat:
 
-## Ekonomisk nytta
+- `unit_warnings`
+- `ignored_sensors`
+- `delta_warnings`
+- `status_reason`
+- `pending_solar_production_delta_kwh`
 
-Ekonomisk nytta beräknas nu som:
+`pending_solar_production_delta_kwh` är diagnostik och ger inte i sig själv varning.
 
-exportintäkt
-+ nätnytta
-+ värde av egenförbrukad solel
+## Skapade sensorer
 
-Importkostnad redovisas separat.
-Batteriverkningsgrad är en teknisk mätning och påverkar inte ekonomisk nytta.
+Integrationens sensorer omfattar bland annat:
+
+- aktuellt köppris totalt
+- aktuell ersättning såld el
+- aktuell överföringsavgift
+- aktuell nätnytta
+- datakvalitet
+- engångsavräkning
+- batteriverkningsgrad
+- importkostnad idag, denna månad och total
+- exportintäkt idag, denna månad och total
+- nätnytta idag, denna månad och total
+- värde egenförbrukad solel idag, denna månad och total
+- ekonomisk nytta idag, denna månad och total
+- kvarvarande investering, om investeringskostnad är större än 0
+- ROI procent, om investeringskostnad är större än 0
+
+## Viktigt vid uppdatering
+
+Efter kodändringar i `custom_components` krävs full omstart av Home Assistant.
+
+Enbart omladdning av integrationen räcker inte alltid, särskilt när:
+
+- Python-kod har ändrats
+- `manifest.json` version har ändrats
+- RestoreEntity/config entry-beteende har ändrats
+
+## Felsökning
+
+Om batteriverkningsgrad är `unknown`, kontrollera att valda batterisensorer:
+
+- finns
+- har numeriskt state
+- har energienhet, till exempel `Wh` eller `kWh`
+- är ackumulerande energi, inte momentan effekt
+
+Om engångsavräkning verkar låst:
+
+- kontrollera status-sensorn `Engångsavräkning`
+- använd reset-servicen med `confirm: RESET`
+- starta om Home Assistant
+
+Om datakvalitet visar `Varning`, öppna sensorns attribut och läs `status_reason`, `unit_warnings`, `ignored_sensors` och `delta_warnings`.
