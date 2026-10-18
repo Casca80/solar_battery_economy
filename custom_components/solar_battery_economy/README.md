@@ -1,6 +1,6 @@
 # Sol- och batteriekonomi
 
-Version: 0.3.30
+Version: 0.3.31
 
 Custom integration för Home Assistant som räknar ekonomisk nytta av solproduktion, såld el, nätnytta, egenförbrukad solel, importkostnad, investering/ROI och batteriverkningsgrad.
 
