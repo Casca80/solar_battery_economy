@@ -1,3 +1,11 @@
+v0.3.31
+
+Fix:
+- Återställning av engångsavräkning importerar nu de fyra konstanterna för sparad avräkningsstatus. Det förhindrar NameError efter att totalsumman har ändrats men innan låsningen har rensats.
+- Rättningen ändrar inte befintliga ekonomivärden och kör inte någon avräkning automatiskt.
+
+------------------------------
+
 v0.3.29
 
 Fix:
